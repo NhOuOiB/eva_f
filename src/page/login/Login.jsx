@@ -8,11 +8,13 @@ import logo from '../../assets/eva_logo.png';
 
 const Login = () => {
   const [login, setLogin] = useState({
-    account: '',
-    password: '',
+    account: 'admin',
+    password: '1234',
   });
   const navigate = useNavigate();
   const year = moment().year();
+
+  const [Isfocus, setIsFocus] = useState(false);
 
   function handleChange(e) {
     setLogin({ ...login, [e.target.name]: e.target.value });
@@ -25,7 +27,7 @@ const Login = () => {
       localStorage.setItem('userId', res.data.id);
       localStorage.setItem('account', res.data.account);
       localStorage.setItem('permission', res.data.permission);
-      if (res.status == 200) {
+      if (res.data.message === '成功登入') {
         toast.success(res.data.message, {
           position: 'top-center',
           autoClose: 5000,
@@ -35,14 +37,23 @@ const Login = () => {
           draggable: true,
           theme: 'light',
         });
-      }
-      if (res.data.permission == 1) {
-        navigate('/basicInfo');
       } else {
+        toast.error(res.data.message, {
+          position: 'top-center',
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: 'light',
+        });
+        
+      }
+      if (res.data.permission != null) {
         navigate('/basicInfo');
       }
     } catch (err) {
-        console.log(err.response.data.message);
+      console.log(err.response.data.message);
       toast.error(err.response.data.message, {
         position: 'top-center',
         autoClose: 5000,
@@ -65,13 +76,23 @@ const Login = () => {
           <div>
             <img src={logo} alt="logo" />
           </div>
-          <div className="w-4/5 h-1/3 sm:w-1/2 sm:h-2/5 md:w-1/3 xl:w-1/4 2xl:w-1/5  m-auto bg-white flex justify-center items-center rounded-xl shadow-md">
+          <div
+            className={`w-4/5 h-1/3 sm:w-1/2 sm:h-2/5 md:w-1/3 xl:w-1/4 2xl:w-1/5 m-auto bg-white flex justify-center items-center rounded-xl shadow-md transition duration-500 hover:scale-110 hover:shadow-2xl ${Isfocus && 'scale-110 shadow-2xl'}`}
+          >
             <div className="flex flex-col justify-center items-center gap-4">
               <div className="flex flex-col">
                 <label htmlFor="account" className="text-left">
                   帳號
                 </label>
-                <input type="text" id="account" name="account" value={login.account} onChange={handleChange} />
+                <input
+                  type="text"
+                  id="account"
+                  name="account"
+                  value={login.account}
+                  onChange={handleChange}
+                  onFocus={() => setIsFocus(true)}
+                  onBlur={() => setIsFocus(false)}
+                />
               </div>
               <div className="flex flex-col">
                 <label htmlFor="password" className="text-left">
@@ -88,6 +109,8 @@ const Login = () => {
                       handleLogin(e);
                     }
                   }}
+                  onFocus={() => setIsFocus(true)}
+                  onBlur={() => setIsFocus(false)}
                 />
               </div>
               <div
