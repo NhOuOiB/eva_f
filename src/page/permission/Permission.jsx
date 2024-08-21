@@ -187,7 +187,7 @@ const Permission = () => {
             </div>
             {/* 新增 */}
             <div
-              className=" border rounded-xl p-2 cursor-pointer hover:shadow transition duration-300 absolute right-4"
+              className=" border rounded-xl p-2 cursor-pointer hover:shadow transition duration-300 absolute right-0 md:right-4 2xl:right-0"
               onClick={() => {
                 if (permissionNow === 'Account') {
                   setId(0);
