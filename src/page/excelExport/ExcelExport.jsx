@@ -4,7 +4,7 @@ import { API_URL } from '../../../utils/config';
 import Nav from '../../component/Nav';
 import { MdSimCardDownload } from 'react-icons/md';
 import { IconContext } from 'react-icons';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
 
@@ -14,6 +14,52 @@ const ExcelExport = () => {
     type: 'month',
     date: dayjs().format('YYYY-MM'),
   });
+
+  const handleExport = async () => {
+    const res = await axios.get(`${API_URL}/excelExport/getExcelData`, {
+      params: searchCondition,
+    });
+    console.log(res.data);
+
+    const days = dayjs(searchCondition.date).daysInMonth();
+    const header = ['ID', 'Name', 'MonthlyTotalQty'];
+    const nameIndex = header.indexOf('Name');
+    const dateHeaders = Array.from({ length: days }, (_, i) => `${i + 1}`);
+    header.splice(nameIndex + 1, 0, ...dateHeaders);
+    const ws = XLSX.utils.json_to_sheet(res.data, {
+      header: header,
+    });
+
+    XLSX.utils.sheet_add_aoa(ws, [['項次', '項目', ...dateHeaders, '總計']], { origin: 'A1' });
+
+    // 設定欄位寬度
+    const columnWidths = [
+      { wpx: 30 }, // ID 欄
+      { wpx: 160 }, // Name 欄
+      ...dateHeaders.map(() => ({ wpx: 20 })), // 每天的欄位
+      { wpx: 50 }, // MonthlyTotalQty 欄
+    ];
+    ws['!cols'] = columnWidths;
+
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell_address = { c: C, r: R };
+        const cell_ref = XLSX.utils.encode_cell(cell_address);
+        if (!ws[cell_ref]) continue;
+        ws[cell_ref].s = {
+          alignment: {
+            horizontal: 'center',
+            vertical: 'center',
+          },
+        };
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, dayjs(searchCondition.date).format('YYYY-MM'));
+    XLSX.writeFile(wb, `報表${searchCondition.date}.xlsx`);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,7 +93,7 @@ const ExcelExport = () => {
           <div className="w-full h-fit flex justify-end">
             <div
               className="w-fit border py-2 px-4 rounded shadow hover:shadow-md hover:scale-110 cursor-pointer transition duration-500"
-              // onClick={handleExport}
+              onClick={handleExport}
             >
               <IconContext.Provider value={{ className: '', size: 28 }}>
                 <MdSimCardDownload />
@@ -150,7 +196,7 @@ const ExcelExport = () => {
               </tbody>
             </table>
             {data?.length === 0 && (
-              <div className="w-full h-[32rem] flex justify-center items-center font-extrabold text-3xl">
+              <div className="w-full h-[39rem] flex justify-center items-center font-extrabold text-3xl">
                 <div>查無資料</div>
               </div>
             )}
