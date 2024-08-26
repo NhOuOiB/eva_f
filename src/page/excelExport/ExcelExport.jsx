@@ -19,9 +19,10 @@ const ExcelExport = () => {
     const res = await axios.get(`${API_URL}/excelExport/getExcelData`, {
       params: searchCondition,
     });
+    if (res.data.length === 0 || searchCondition.date === '') {
+      return false;
+    }
     if (searchCondition.type === 'day') {
-      console.log(res.data);
-
       // 撈出開頭小寫d的key
       const dkeys = Object.keys(res.data[0]).filter((key) => key[0] === 'd');
       const rkeys = Object.keys(res.data[0]).filter((key) => key[0] === 'r');
