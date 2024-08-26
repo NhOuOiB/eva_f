@@ -19,46 +19,100 @@ const ExcelExport = () => {
     const res = await axios.get(`${API_URL}/excelExport/getExcelData`, {
       params: searchCondition,
     });
-    console.log(res.data);
+    if (searchCondition.type === 'day') {
+      console.log(res.data);
 
-    const days = dayjs(searchCondition.date).daysInMonth();
-    const header = ['ID', 'Name', 'MonthlyTotalQty'];
-    const nameIndex = header.indexOf('Name');
-    const dateHeaders = Array.from({ length: days }, (_, i) => `${i + 1}`);
-    header.splice(nameIndex + 1, 0, ...dateHeaders);
-    const ws = XLSX.utils.json_to_sheet(res.data, {
-      header: header,
-    });
+      // 撈出開頭小寫d的key
+      const dkeys = Object.keys(res.data[0]).filter((key) => key[0] === 'd');
+      const rkeys = Object.keys(res.data[0]).filter((key) => key[0] === 'r');
 
-    XLSX.utils.sheet_add_aoa(ws, [['項次', '項目', ...dateHeaders, '總計']], { origin: 'A1' });
+      // 把dkeys前面的d去掉
+      const processedHeaders = dkeys.map((key) => key.slice(1));
 
-    // 設定欄位寬度
-    const columnWidths = [
-      { wpx: 30 }, // ID 欄
-      { wpx: 160 }, // Name 欄
-      ...dateHeaders.map(() => ({ wpx: 20 })), // 每天的欄位
-      { wpx: 50 }, // MonthlyTotalQty 欄
-    ];
-    ws['!cols'] = columnWidths;
+      const header = ['ID', 'DeviceName', 'EnoughQty', ...dkeys, ...rkeys];
 
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const cell_address = { c: C, r: R };
-        const cell_ref = XLSX.utils.encode_cell(cell_address);
-        if (!ws[cell_ref]) continue;
-        ws[cell_ref].s = {
-          alignment: {
-            horizontal: 'center',
-            vertical: 'center',
-          },
-        };
+      const ws = XLSX.utils.json_to_sheet(res.data, { header: header });
+
+      XLSX.utils.sheet_add_aoa(ws, [['項次', '項目', '缺少數量', ...processedHeaders, ...processedHeaders]], {
+        origin: 'A1',
+      });
+
+      // 設定欄位寬度
+      const columnWidths = [
+        { wpx: 30 }, // ID 欄
+        { wpx: 160 }, // Name 欄
+        { wpx: 50 }, // EnoughQty 欄
+      ];
+      ws['!cols'] = columnWidths;
+
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cell_address = { c: C, r: R };
+          const cell_ref = XLSX.utils.encode_cell(cell_address);
+          if (!ws[cell_ref]) continue;
+          ws[cell_ref].s = {
+            alignment: {
+              horizontal: 'center',
+              vertical: 'center',
+            },
+          };
+
+          if (R === range.s.r && header[C].startsWith('d')) {
+            ws[cell_ref].s.fill = {
+              fgColor: { rgb: '059669' },
+            };
+          } else if (R === range.s.r && header[C].startsWith('r')) {
+            ws[cell_ref].s.fill = {
+              fgColor: { rgb: 'f87171' },
+            };
+          }
+        }
       }
-    }
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, dayjs(searchCondition.date).format('YYYY-MM'));
-    XLSX.writeFile(wb, `報表${searchCondition.date}.xlsx`);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, dayjs(searchCondition.date).format('YYYY-MM-DD'));
+      XLSX.writeFile(wb, `報表${searchCondition.date}.xlsx`);
+    } else if (searchCondition.type === 'month') {
+      const days = dayjs(searchCondition.date).daysInMonth();
+      const header = ['ID', 'Name', 'MonthlyTotalQty'];
+      const nameIndex = header.indexOf('Name');
+      const dateHeaders = Array.from({ length: days }, (_, i) => `${i + 1}`);
+      header.splice(nameIndex + 1, 0, ...dateHeaders);
+      const ws = XLSX.utils.json_to_sheet(res.data, {
+        header: header,
+      });
+
+      XLSX.utils.sheet_add_aoa(ws, [['項次', '項目', ...dateHeaders, '總計']], { origin: 'A1' });
+
+      // 設定欄位寬度
+      const columnWidths = [
+        { wpx: 30 }, // ID 欄
+        { wpx: 160 }, // Name 欄
+        ...dateHeaders.map(() => ({ wpx: 20 })), // 每天的欄位
+        { wpx: 50 }, // MonthlyTotalQty 欄
+      ];
+      ws['!cols'] = columnWidths;
+
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cell_address = { c: C, r: R };
+          const cell_ref = XLSX.utils.encode_cell(cell_address);
+          if (!ws[cell_ref]) continue;
+          ws[cell_ref].s = {
+            alignment: {
+              horizontal: 'center',
+              vertical: 'center',
+            },
+          };
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, dayjs(searchCondition.date).format('YYYY-MM'));
+      XLSX.writeFile(wb, `報表${searchCondition.date}.xlsx`);
+    }
   };
 
   useEffect(() => {
@@ -67,7 +121,6 @@ const ExcelExport = () => {
         const res = await axios.get(`${API_URL}/excelExport/getOrder`, {
           params: searchCondition,
         });
-        console.log(res.data);
         setData(res.data);
       } catch (err) {
         console.error(err);
