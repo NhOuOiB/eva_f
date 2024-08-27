@@ -4,8 +4,26 @@ import QuickSearch from '../page/quickSearch/QuickSearch';
 import ExcelExport from '../page/excelExport/ExcelExport';
 import Permission from '../page/permission/Permission';
 import Nav from '../component/Nav';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Router = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!localStorage.getItem('userId') || !localStorage.getItem('account') || !localStorage.getItem('permission')) {
+      toast.error('請先登入', {
+        position: 'top-center',
+        autoClose: 3000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: 'light',
+      });
+      navigate('/login');
+    }
+  }, []);
   return (
     <>
       <Routes>
