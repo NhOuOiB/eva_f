@@ -7,6 +7,8 @@ import { IconContext } from 'react-icons';
 import { MdDelete } from 'react-icons/md';
 import { LuPlus } from 'react-icons/lu';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
 const Permission = () => {
   const [permissionNow, setPermissionNow] = useState('Account');
@@ -14,6 +16,8 @@ const Permission = () => {
   const [list, setList] = useState([]);
   const [data, setData] = useState({});
   const [AccountPermissions, setAccountPermissions] = useState([]);
+
+  const MySwal = withReactContent(Swal);
 
   const handlePermissionChange = (newPermission) => {
     if (permissionNow !== newPermission) {
@@ -26,8 +30,8 @@ const Permission = () => {
     if (data.Name === '' || data.Account === '' || data.Password === '' || data.PermissionsID === '') {
       toast.error('欄位未填寫', {
         position: 'top-center',
-        autoClose: 5000,
-        hideProgressBar: false,
+        autoClose: 3000,
+        hideProgressBar: true,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
@@ -40,8 +44,8 @@ const Permission = () => {
       if (res.data.status) {
         toast.success(res.data.message, {
           position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
+          autoClose: 3000,
+          hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
@@ -50,8 +54,8 @@ const Permission = () => {
       } else {
         toast.error(res.data.message, {
           position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
+          autoClose: 3000,
+          hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
@@ -63,8 +67,8 @@ const Permission = () => {
       if (res.data.status) {
         toast.success(res.data.message, {
           position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
+          autoClose: 3000,
+          hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
@@ -73,8 +77,8 @@ const Permission = () => {
       } else {
         toast.error(res.data.message, {
           position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
+          autoClose: 3000,
+          hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
@@ -89,8 +93,8 @@ const Permission = () => {
     if (localStorage.getItem('userId') == id) {
       toast.error('不能刪除目前登入帳號', {
         position: 'top-center',
-        autoClose: 5000,
-        hideProgressBar: false,
+        autoClose: 3000,
+        hideProgressBar: true,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
@@ -98,32 +102,45 @@ const Permission = () => {
       });
       return false;
     }
-    const res = await axios.delete(`${API_URL}/permission/delete${permissionNow}`, { params: { ID: id } });
+    Swal.fire({
+      title: `確定要刪除嗎?`,
+      html: `刪除後將無法復原`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: '確定',
+      cancelButtonText: '取消',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const res = await axios.delete(`${API_URL}/permission/delete${permissionNow}`, { params: { ID: id } });
 
-    if (res.data.status) {
-      toast.success(res.data.message, {
-        position: 'top-center',
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: 'light',
-      });
-    } else {
-      toast.error(res.data.message, {
-        position: 'top-center',
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        theme: 'light',
-      });
-    }
+        if (res.data.status) {
+          toast.success(res.data.message, {
+            position: 'top-center',
+            autoClose: 3000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            theme: 'light',
+          });
+        } else {
+          toast.error(res.data.message, {
+            position: 'top-center',
+            autoClose: 3000,
+            hideProgressBar: true,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            theme: 'light',
+          });
+        }
 
-    getList();
-    setId(null);
+        getList();
+        setId(null);
+      }
+    });
   };
 
   const getList = async () => {
