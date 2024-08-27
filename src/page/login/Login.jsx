@@ -28,26 +28,25 @@ const Login = () => {
       localStorage.setItem('account', res.data.account);
       localStorage.setItem('permission', res.data.permission);
       if (res.data.message === '成功登入') {
-        toast.success(res.data.message, {
-          position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          theme: 'light',
-        });
+        // toast.success(res.data.message, {
+        //   position: 'top-center',
+        //   autoClose: 3000,
+        // hideProgressBar: true,
+        //   closeOnClick: true,
+        //   pauseOnHover: true,
+        //   draggable: true,
+        //   theme: 'light',
+        // });
       } else {
         toast.error(res.data.message, {
           position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
+          autoClose: 3000,
+          hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
           theme: 'light',
         });
-        
       }
       if (res.data.permission != null) {
         navigate('/basicInfo');
@@ -56,8 +55,8 @@ const Login = () => {
       console.log(err.response.data.message);
       toast.error(err.response.data.message, {
         position: 'top-center',
-        autoClose: 5000,
-        hideProgressBar: false,
+        autoClose: 3000,
+        hideProgressBar: true,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
