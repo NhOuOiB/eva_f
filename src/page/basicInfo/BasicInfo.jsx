@@ -236,6 +236,10 @@ const BasicInfo = () => {
       setEditArr([]);
       setNewData(currentMaintenance.newData);
       setSearchCondition(currentMaintenance.searchCondition);
+
+      if (maintenanceNow === '區域') {
+        setNewData({ ...currentMaintenance.newData, UserStamp: localStorage.getItem('account') });
+      }
     })();
   }, [maintenanceNow]);
 
@@ -245,9 +249,7 @@ const BasicInfo = () => {
     })();
   }, [searchCondition]);
 
-  useEffect(() => {
-    setNewData({ ...currentMaintenance.newData, UserStamp: localStorage.getItem('account') });
-  }, []);
+  useEffect(() => {}, []);
 
   // useEffect(() => {
   //   if (editArr.length > 0) {
