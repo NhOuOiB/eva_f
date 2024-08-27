@@ -32,11 +32,23 @@ const ExcelExport = () => {
 
       const header = ['ID', 'DeviceName', 'EnoughQty', ...dkeys, ...rkeys];
 
-      const ws = XLSX.utils.json_to_sheet(res.data, { header: header });
+      const ws = XLSX.utils.json_to_sheet([{}, ...res.data], { header: header });
 
-      XLSX.utils.sheet_add_aoa(ws, [['項次', '項目', '缺少數量', ...processedHeaders, ...processedHeaders]], {
+      const fillSpace = Array(processedHeaders.length - 1).fill('');
+
+      XLSX.utils.sheet_add_aoa(ws, [['', '', '', '需求', ...fillSpace, '回收', ...fillSpace]], {
         origin: 'A1',
       });
+
+      XLSX.utils.sheet_add_aoa(ws, [['項次', '項目', '缺少數量', ...processedHeaders, ...processedHeaders]], {
+        origin: 'A2',
+      });
+
+      // 合併儲存格
+      ws['!merges'] = [
+        { s: { r: 0, c: 3 }, e: { r: 0, c: 3 + dkeys.length - 1 } }, // 合併需求
+        { s: { r: 0, c: 3 + dkeys.length }, e: { r: 0, c: 3 + dkeys.length + rkeys.length - 1 } }, // 合併回收
+      ];
 
       // 設定欄位寬度
       const columnWidths = [
