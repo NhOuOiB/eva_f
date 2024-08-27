@@ -117,6 +117,7 @@ const QuickSearch = () => {
               <table className="table-fixed">
                 <thead>
                   <tr>
+                    <th className="border border-separate border-slate-500 px-4 text-nowrap">項次</th>
                     <th className="border border-separate border-slate-500 px-4 text-nowrap">位置</th>
                     <th className="border border-separate border-slate-500 px-4 text-nowrap">機號</th>
                     <th className="border border-separate border-slate-500 px-4 text-nowrap">機體部位</th>
@@ -129,6 +130,7 @@ const QuickSearch = () => {
                   {ladder.map((v, i) => {
                     return (
                       <tr key={i}>
+                        <td className="border border-separate border-slate-300 p-2 px-4 text-nowrap">{i + 1}</td>
                         <td className="border border-separate border-slate-300 p-2 px-4 text-nowrap">{v.AreaName}</td>
                         <td className="border border-separate border-slate-300 px-4 text-nowrap">{v.Model}</td>
                         <td className="border border-separate border-slate-300 px-4 text-nowrap">{v.Location}</td>
