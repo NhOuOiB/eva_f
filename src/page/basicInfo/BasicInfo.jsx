@@ -6,6 +6,8 @@ import { AiOutlineCloseCircle } from 'react-icons/ai';
 import Nav from '../../component/Nav';
 import { toast } from 'react-toastify';
 import moment from 'moment';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
 
 const maintenance = [
   {
@@ -60,12 +62,13 @@ const maintenance = [
     },
   },
 ];
-
 const BasicInfo = () => {
   const [maintenanceNow, setMaintenanceNow] = useState('類別');
   const [editArr, setEditArr] = useState([]);
   const [data, setData] = useState([]);
   const inputRefs = useRef({});
+
+  const MySwal = withReactContent(Swal);
 
   const currentMaintenance = useMemo(() => {
     return maintenance.find((v) => v.name === maintenanceNow);
@@ -85,8 +88,8 @@ const BasicInfo = () => {
         if (result.data.status) {
           toast.success(result.data.message, {
             position: 'top-center',
-            autoClose: 5000,
-            hideProgressBar: false,
+            autoClose: 3000,
+            hideProgressBar: true,
             closeOnClick: true,
             pauseOnHover: true,
             draggable: true,
@@ -96,8 +99,8 @@ const BasicInfo = () => {
         } else {
           toast.error(result.data.message, {
             position: 'top-center',
-            autoClose: 5000,
-            hideProgressBar: false,
+            autoClose: 3000,
+            hideProgressBar: true,
             closeOnClick: true,
             pauseOnHover: true,
             draggable: true,
@@ -117,18 +120,30 @@ const BasicInfo = () => {
     try {
       for (let key in newData) {
         if (newData[key] === '' || newData[key] === null || newData[key] === undefined) {
-          toast.error(
-            `請輸入 ${maintenanceNow === '類別' && key === 'Name' ? '裝置名稱' : maintenanceNow === '區域' && key === 'AreaName' ? '區域名稱' : maintenanceNow === '機號' && key === 'Name' ? '機號' : key}`,
-            {
+          if (key === 'UserStamp') {
+            toast.error('請重新登入', {
               position: 'top-center',
-              autoClose: 5000,
-              hideProgressBar: false,
+              autoClose: 3000,
+              hideProgressBar: true,
               closeOnClick: true,
               pauseOnHover: true,
               draggable: true,
               theme: 'light',
-            },
-          );
+            });
+          } else {
+            toast.error(
+              `請輸入 ${maintenanceNow === '類別' && key === 'Name' ? '裝置名稱' : maintenanceNow === '區域' && key === 'AreaName' ? '區域名稱' : maintenanceNow === '機號' && key === 'Name' ? '機號' : key}`,
+              {
+                position: 'top-center',
+                autoClose: 3000,
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                theme: 'light',
+              },
+            );
+          }
           return false;
         }
       }
@@ -136,8 +151,8 @@ const BasicInfo = () => {
       if (result.data.status) {
         toast.success(result.data.message, {
           position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
+          autoClose: 3000,
+          hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
@@ -148,8 +163,8 @@ const BasicInfo = () => {
       } else {
         toast.error(result.data.message, {
           position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
+          autoClose: 3000,
+          hideProgressBar: true,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
@@ -175,29 +190,42 @@ const BasicInfo = () => {
 
   async function handleDelete(id) {
     try {
-      let result = await axios.put(`${API_URL}/basicInfo/delete${currentMaintenance.api}`, { ID: id });
-      if (result.data.status) {
-        toast.success(result.data.message, {
-          position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          theme: 'light',
-        });
-        handleGet();
-      } else {
-        toast.error(result.data.message, {
-          position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          theme: 'light',
-        });
-      }
+      Swal.fire({
+        title: `確定要刪除嗎?`,
+        html: `刪除後將無法復原`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: '確定',
+        cancelButtonText: '取消',
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          let result = await axios.put(`${API_URL}/basicInfo/delete${currentMaintenance.api}`, { ID: id });
+          if (result.data.status) {
+            toast.success(result.data.message, {
+              position: 'top-center',
+              autoClose: 3000,
+              hideProgressBar: true,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              theme: 'light',
+            });
+            handleGet();
+          } else {
+            toast.error(result.data.message, {
+              position: 'top-center',
+              autoClose: 3000,
+              hideProgressBar: true,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              theme: 'light',
+            });
+          }
+        }
+      });
     } catch (error) {
       console.error('Error delete data:', error);
     }
@@ -216,6 +244,10 @@ const BasicInfo = () => {
       handleGet();
     })();
   }, [searchCondition]);
+
+  useEffect(() => {
+    setNewData({ ...currentMaintenance.newData, UserStamp: localStorage.getItem('account') });
+  }, []);
 
   // useEffect(() => {
   //   if (editArr.length > 0) {
