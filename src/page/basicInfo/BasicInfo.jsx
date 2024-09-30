@@ -31,11 +31,10 @@ const maintenance = [
       AreaName: '區域',
       Name: '名稱',
       Model: '機型',
-      Describe: '描述',
       RFID: 'RFID',
       Region: 'Region',
       Location: '機體部位',
-      Code: '代號',
+      No: '代號',
       Longitude: '經度',
       Latitude: '緯度',
       RecordTime: '時間',
@@ -61,12 +60,49 @@ const maintenance = [
       Name: '機號',
     },
   },
+  {
+    name: '設備',
+    newData: {
+      DeviceID: '',
+      EPC: '',
+      AreaID: '',
+      Name: '',
+      Model: '',
+      RFID: '',
+      Region: '',
+      Location: '',
+      Direction: '',
+      No: '',
+      Longitude: '',
+      Latitude: '',
+      RecordTime: '',
+    },
+    api: 'DeviceDetail',
+    searchCondition: { Name: '', AreaID: '', Model: '', Region: '', Location: '' },
+    keyToLabel: {
+      ID: '編號',
+      DeviceID: '類別',
+      EPC: 'EPC',
+      AreaID: '區域',
+      Name: '名稱',
+      Model: '機型',
+      RFID: 'RFID',
+      Region: 'Region',
+      Location: '機體部位',
+      Direction: '方向',
+      No: '代號',
+      Longitude: '經度',
+      Latitude: '緯度',
+      RecordTime: '時間',
+    },
+  },
 ];
 const BasicInfo = () => {
   const [maintenanceNow, setMaintenanceNow] = useState('類別');
   const [editArr, setEditArr] = useState([]);
   const [data, setData] = useState([]);
   const inputRefs = useRef({});
+  const [options, setOptions] = useState([]);
 
   const MySwal = withReactContent(Swal);
 
@@ -183,6 +219,10 @@ const BasicInfo = () => {
         params: searchCondition,
       });
       setData(res.data);
+      if (maintenanceNow === '設備') {
+        let res = await axios.get(`${API_URL}/basicInfo/getOptions`);
+        setOptions(res.data);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -263,13 +303,15 @@ const BasicInfo = () => {
   //   }
   // }, [editArr]);
 
+console.log(newData);
+
   return (
     <div className="bg w-full h-full flex justify-center items-center gap-4">
       <Nav />
       <div className="content bg-white w-full sm:w-11/12 md:w-5/6 lg:w-4/5 xl:w-5/6 2xl:w-3/4 h-5/6 min-h-60 rounded-xl flex justify-center items-center gap-6 lg:gap-10 xl:gap-16 2xl:gap-24 py-12 overflow-hidden">
         <div className="w-1/2 md:w-1/4 xl:w-1/5 h-full flex flex-col gap-8">
           {/* 分頁 */}
-          <div className="w-full h-16 bg-white grid grid-cols-4 shadow-md border">
+          <div className="w-full h-16 bg-white grid grid-cols-5 shadow-md border">
             {maintenance.map((v, i) => {
               return (
                 <div
@@ -295,16 +337,40 @@ const BasicInfo = () => {
                 <label htmlFor={labelName}>
                   {maintenance.find((v) => v.name === maintenanceNow).keyToLabel[labelName]}
                 </label>
-                <input
-                  type="text"
-                  id={labelName}
-                  value={searchCondition[labelName] || ''}
-                  onChange={(e) => {
-                    setSearchCondition((prev) => {
-                      return { ...prev, [labelName]: e.target.value };
-                    });
-                  }}
-                />
+                {labelName === 'AreaID' ? (
+                  <select
+                    name=""
+                    id={labelName}
+                    defaultValue={searchCondition[labelName]}
+                    className="w-48 min-h-9 border px-2 rounded-md"
+                    onChange={(e) => {
+                      setSearchCondition((prev) => ({
+                        ...prev,
+                        [labelName]: e.target.value,
+                      }));
+                    }}
+                  >
+                    <option value="">選項</option>
+                    {options[labelName]?.map((value) => {
+                      return (
+                        <option value={value.ID} key={value.ID}>
+                          {value.AreaName}
+                        </option>
+                      );
+                    })}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    id={labelName}
+                    value={searchCondition[labelName] || ''}
+                    onChange={(e) => {
+                      setSearchCondition((prev) => {
+                        return { ...prev, [labelName]: e.target.value };
+                      });
+                    }}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -337,9 +403,48 @@ const BasicInfo = () => {
                     <td className="border-b border-slate-300"></td>
                     {Object.keys(newData).map((fieldName, i) => {
                       return (
-                        fieldName !== 'UserStamp' && (
+                        fieldName !== 'UserStamp' &&
+                        (fieldName !== 'RecordTime' ? (
                           <td className="border-y border-separate border-slate-300" key={i}>
-                            <input
+                            {fieldName === 'AreaID' || fieldName === 'DeviceID' ? (
+                              <select
+                                name=""
+                                id={fieldName}
+                                value={newData[fieldName]}
+                                className="w-fit h-9 border  rounded-md"
+                                onChange={(e) => {
+                                  setNewData((prev) => ({
+                                    ...prev,
+                                    [fieldName]: e.target.value,
+                                  }));
+                                }}
+                              >
+                                <option value="">選項</option>
+                                {options[fieldName]?.map((value) => {
+                                  return (
+                                    <option value={value.ID} key={value.ID}>
+                                      {value[fieldName === 'AreaID' ? 'AreaName' : 'Name']}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                className="w-full"
+                                value={newData[fieldName] || ''}
+                                onChange={(e) => {
+                                  setNewData((prev) => ({
+                                    ...prev,
+                                    [fieldName]: e.target.value,
+                                  }));
+                                }}
+                                onKeyDown={(e) => {
+                                  if (event.key === 'Enter') handleAdd();
+                                }}
+                              />
+                            )}
+                            {/* <input
                               type="text"
                               className="w-full"
                               value={newData[fieldName] || ''}
@@ -352,9 +457,11 @@ const BasicInfo = () => {
                               onKeyDown={(e) => {
                                 if (event.key === 'Enter') handleAdd();
                               }}
-                            />
+                            /> */}
                           </td>
-                        )
+                        ) : (
+                          <td key={i}></td>
+                        ))
                       );
                     })}
                     <td className="border border-l-0 border-separate border-slate-300">
@@ -386,14 +493,63 @@ const BasicInfo = () => {
                       {Object.keys(v).map((fieldName, index) => {
                         const isEditable =
                           editArr.includes(v.ID) &&
-                          (fieldName === 'Name' || fieldName === 'EPC' || fieldName === 'AreaName');
+                          (fieldName === 'Name' ||
+                            fieldName === 'DeviceID' ||
+                            fieldName === 'EPC' ||
+                            fieldName === 'AreaID' ||
+                            fieldName === 'Model' ||
+                            fieldName === 'RFID' ||
+                            fieldName === 'Region' ||
+                            fieldName === 'Location' ||
+                            fieldName === 'Direction' ||
+                            fieldName === 'No');
                         if (isEditable) {
                           if (!inputRefs.current[v.ID]) {
                             inputRefs.current[v.ID] = {};
                           }
                           return (
                             <td className="border-y border-separate border-slate-300" key={index}>
-                              <input
+                              {fieldName === 'AreaID' || fieldName === 'DeviceID' ? (
+                                <select
+                                  name=""
+                                  id={fieldName}
+                                  value={v[fieldName]}
+                                  className="w-fit h-9 border  rounded-md"
+                                  onChange={(e) => {
+                                    setData((prev) =>
+                                      prev.map((item) =>
+                                        item.ID == v.ID ? { ...item, [fieldName]: e.target.value } : item,
+                                      ),
+                                    );
+                                  }}
+                                >
+                                  {options[fieldName]?.map((value) => {
+                                    return (
+                                      <option value={value.ID} key={value.ID}>
+                                        {value[fieldName === 'AreaID' ? 'AreaName' : 'Name']}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              ) : (
+                                <input
+                                  // ref={(el) => (inputRefs.current[v.ID][fieldName] = el)}
+                                  type="text"
+                                  className="min-w-full"
+                                  value={v[fieldName] || ''}
+                                  onChange={(e) => {
+                                    setData((prev) =>
+                                      prev.map((item) =>
+                                        item.ID == v.ID ? { ...item, [fieldName]: e.target.value } : item,
+                                      ),
+                                    );
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdate(v.ID);
+                                  }}
+                                />
+                              )}
+                              {/* <input
                                 // ref={(el) => (inputRefs.current[v.ID][fieldName] = el)}
                                 type="text"
                                 className="min-w-full"
@@ -408,7 +564,7 @@ const BasicInfo = () => {
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') handleUpdate(v.ID);
                                 }}
-                              />
+                              /> */}
                             </td>
                           );
                         }
@@ -423,7 +579,11 @@ const BasicInfo = () => {
                                 ? v[fieldName] === true
                                   ? '是'
                                   : '否'
-                                : v[fieldName]}
+                                : fieldName === 'AreaID'
+                                  ? options[fieldName]?.find((option) => option.ID === v[fieldName])?.AreaName
+                                  : fieldName === 'DeviceID'
+                                    ? options[fieldName]?.find((option) => option.ID === v[fieldName])?.Name
+                                    : v[fieldName]}
                           </td>
                         );
                       })}
