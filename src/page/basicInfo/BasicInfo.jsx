@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import moment from 'moment';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import { Pagination } from 'antd';
 
 const maintenance = [
   {
@@ -24,7 +25,7 @@ const maintenance = [
     name: '細項',
     newData: { Name: '', AreaName: '', Time: '' },
     api: 'DeviceHistory',
-    searchCondition: { Name: '', AreaName: '', Model: '', Region: '', Location: '' },
+    searchCondition: { Name: '', AreaName: '', Model: '', Region: '', Location: '', page: 1, pageSize: 10 },
     keyToLabel: {
       ID: '編號',
       EPC: 'EPC',
@@ -64,21 +65,22 @@ const maintenance = [
     name: '設備',
     newData: {
       DeviceID: '',
-      EPC: '',
+      EPC: '不用填',
       AreaID: '',
       Name: '',
       Model: '',
-      RFID: '',
+      RFID: '不用填',
       Region: '',
       Location: '',
       Direction: '',
       No: '',
-      Longitude: '',
-      Latitude: '',
-      RecordTime: '',
+      ETMS: '',
+      Longitude: '不用填',
+      Latitude: '不用填',
+      RecordTime: new Date(),
     },
     api: 'DeviceDetail',
-    searchCondition: { Name: '', AreaID: '', Model: '', Region: '', Location: '' },
+    searchCondition: { Name: '', AreaID: '', Model: '', Region: '', Location: '', page: 1, pageSize: 10 },
     keyToLabel: {
       ID: '編號',
       DeviceID: '類別',
@@ -91,6 +93,7 @@ const maintenance = [
       Location: '機體部位',
       Direction: '方向',
       No: '代號',
+      ETMS: 'ETMS',
       Longitude: '經度',
       Latitude: '緯度',
       RecordTime: '時間',
@@ -103,6 +106,7 @@ const BasicInfo = () => {
   const [data, setData] = useState([]);
   const inputRefs = useRef({});
   const [options, setOptions] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
 
   const MySwal = withReactContent(Swal);
 
@@ -183,7 +187,8 @@ const BasicInfo = () => {
           return false;
         }
       }
-      let result = await axios.post(`${API_URL}/basicInfo/add${currentMaintenance.api}`, newData);
+      let insertData = { ...newData, UserStamp: localStorage.getItem('account') };
+      let result = await axios.post(`${API_URL}/basicInfo/add${currentMaintenance.api}`, insertData);
       if (result.data.status) {
         toast.success(result.data.message, {
           position: 'top-center',
@@ -218,7 +223,9 @@ const BasicInfo = () => {
       let res = await axios.get(`${API_URL}/basicInfo/get${currentMaintenance.api}`, {
         params: searchCondition,
       });
-      setData(res.data);
+      console.log(res.data);
+      setData(res.data.data);
+      setTotalCount(res.data.totalCount);
       if (maintenanceNow === '設備') {
         let res = await axios.get(`${API_URL}/basicInfo/getOptions`);
         setOptions(res.data);
@@ -303,7 +310,7 @@ const BasicInfo = () => {
   //   }
   // }, [editArr]);
 
-console.log(newData);
+  console.log(newData);
 
   return (
     <div className="bg w-full h-full flex justify-center items-center gap-4">
@@ -337,40 +344,43 @@ console.log(newData);
                 <label htmlFor={labelName}>
                   {maintenance.find((v) => v.name === maintenanceNow).keyToLabel[labelName]}
                 </label>
-                {labelName === 'AreaID' ? (
-                  <select
-                    name=""
-                    id={labelName}
-                    defaultValue={searchCondition[labelName]}
-                    className="w-48 min-h-9 border px-2 rounded-md"
-                    onChange={(e) => {
-                      setSearchCondition((prev) => ({
-                        ...prev,
-                        [labelName]: e.target.value,
-                      }));
-                    }}
-                  >
-                    <option value="">選項</option>
-                    {options[labelName]?.map((value) => {
-                      return (
-                        <option value={value.ID} key={value.ID}>
-                          {value.AreaName}
-                        </option>
-                      );
-                    })}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    id={labelName}
-                    value={searchCondition[labelName] || ''}
-                    onChange={(e) => {
-                      setSearchCondition((prev) => {
-                        return { ...prev, [labelName]: e.target.value };
-                      });
-                    }}
-                  />
-                )}
+                {labelName !== 'page' &&
+                  labelName !== 'pageSize' &&
+                  (labelName === 'AreaID' ? (
+                    <select
+                      name=""
+                      id={labelName}
+                      defaultValue={searchCondition[labelName]}
+                      className="w-48 min-h-9 border px-2 rounded-md"
+                      onChange={(e) => {
+                        setSearchCondition((prev) => ({
+                          ...prev,
+                          [labelName]: e.target.value,
+                          page: 1,
+                        }));
+                      }}
+                    >
+                      <option value="">選項</option>
+                      {options[labelName]?.map((value) => {
+                        return (
+                          <option value={value.ID} key={value.ID}>
+                            {value.AreaName}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      id={labelName}
+                      value={searchCondition[labelName] || ''}
+                      onChange={(e) => {
+                        setSearchCondition((prev) => {
+                          return { ...prev, [labelName]: e.target.value, page: 1 };
+                        });
+                      }}
+                    />
+                  ))}
               </div>
             ))}
           </div>
@@ -380,8 +390,8 @@ console.log(newData);
           <div className="w-0.5 h-full bg-slate-300 "></div>
         </div>
         {/* 內容 */}
-        <div className="w-1/2 h-full flex justify-center">
-          <div className="bg-white md:w-fit h-full overflow-auto shadow-md">
+        <div className="w-1/2 h-full flex flex-col justify-center items-center gap-6">
+          <div className="w-fit max-w-full min-h-[36.8rem] overflow-auto shadow-md bg-white">
             <table className="table-fixed">
               <thead>
                 <tr>
@@ -404,14 +414,18 @@ console.log(newData);
                     {Object.keys(newData).map((fieldName, i) => {
                       return (
                         fieldName !== 'UserStamp' &&
-                        (fieldName !== 'RecordTime' ? (
+                        (fieldName !== 'RecordTime' &&
+                        fieldName !== 'EPC' &&
+                        fieldName !== 'RFID' &&
+                        fieldName !== 'Longitude' &&
+                        fieldName !== 'Latitude' ? (
                           <td className="border-y border-separate border-slate-300" key={i}>
                             {fieldName === 'AreaID' || fieldName === 'DeviceID' ? (
                               <select
                                 name=""
                                 id={fieldName}
                                 value={newData[fieldName]}
-                                className="w-fit h-9 border  rounded-md"
+                                className="w-fit h-9 border border-[#ddd] rounded-md"
                                 onChange={(e) => {
                                   setNewData((prev) => ({
                                     ...prev,
@@ -444,20 +458,6 @@ console.log(newData);
                                 }}
                               />
                             )}
-                            {/* <input
-                              type="text"
-                              className="w-full"
-                              value={newData[fieldName] || ''}
-                              onChange={(e) => {
-                                setNewData((prev) => ({
-                                  ...prev,
-                                  [fieldName]: e.target.value,
-                                }));
-                              }}
-                              onKeyDown={(e) => {
-                                if (event.key === 'Enter') handleAdd();
-                              }}
-                            /> */}
                           </td>
                         ) : (
                           <td key={i}></td>
@@ -481,7 +481,7 @@ console.log(newData);
                     <tr key={i} className="hover:bg-green-100 h-14">
                       <td className="border border-r-0 border-separate border-slate-300">
                         <div className="flex gap-2 px-2">
-                          {maintenanceNow !== '細項' && (
+                          {maintenanceNow !== '細項' && maintenanceNow !== '設備' && (
                             <div onClick={() => handleDelete(v.ID)}>
                               <IconContext.Provider value={{ className: 'cursor-pointer' }}>
                                 <AiOutlineCloseCircle />
@@ -495,14 +495,13 @@ console.log(newData);
                           editArr.includes(v.ID) &&
                           (fieldName === 'Name' ||
                             fieldName === 'DeviceID' ||
-                            fieldName === 'EPC' ||
                             fieldName === 'AreaID' ||
                             fieldName === 'Model' ||
-                            fieldName === 'RFID' ||
                             fieldName === 'Region' ||
                             fieldName === 'Location' ||
                             fieldName === 'Direction' ||
-                            fieldName === 'No');
+                            fieldName === 'No' ||
+                            fieldName === 'ETMS');
                         if (isEditable) {
                           if (!inputRefs.current[v.ID]) {
                             inputRefs.current[v.ID] = {};
@@ -609,7 +608,26 @@ console.log(newData);
                   ))}
               </tbody>
             </table>
+            {data?.length === 0 && (
+              <div className="w-full h-[32rem] flex justify-center items-center font-extrabold text-3xl">
+                <div>查無資料</div>
+              </div>
+            )}
           </div>
+          {totalCount > 0 && (
+            <Pagination
+              showSizeChanger={false}
+              showTotal={(total) => `共 ${total} 筆`}
+              className="border shadow rounded-md p-1"
+              defaultCurrent={1}
+              total={totalCount}
+              current={searchCondition.page}
+              pageSize={searchCondition.pageSize}
+              onChange={(page, pageSize) => {
+                setSearchCondition((prev) => ({ ...prev, ['page']: page, ['pageSize']: pageSize }));
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
