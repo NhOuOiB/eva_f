@@ -22,46 +22,6 @@ const maintenance = [
     },
   },
   {
-    name: '細項',
-    newData: { Name: '', AreaName: '', Time: '' },
-    api: 'DeviceHistory',
-    searchCondition: { Name: '', AreaName: '', Model: '', Region: '', Location: '', page: 1, pageSize: 10 },
-    keyToLabel: {
-      ID: '編號',
-      EPC: 'EPC',
-      AreaName: '區域',
-      Name: '名稱',
-      Model: '機型',
-      RFID: 'RFID',
-      Region: 'Region',
-      Location: '機體部位',
-      No: '代號',
-      Longitude: '經度',
-      Latitude: '緯度',
-      RecordTime: '時間',
-    },
-  },
-  {
-    name: '區域',
-    newData: { AreaName: '', UserStamp: localStorage.getItem('account') },
-    api: 'Area',
-    searchCondition: { AreaName: '' },
-    keyToLabel: {
-      ID: '編號',
-      AreaName: '區域名稱',
-    },
-  },
-  {
-    name: '機號',
-    newData: { Name: '' },
-    api: 'AircraftNumber',
-    searchCondition: { Name: '' },
-    keyToLabel: {
-      ID: '編號',
-      Name: '機號',
-    },
-  },
-  {
     name: '設備',
     newData: {
       DeviceID: '',
@@ -94,6 +54,56 @@ const maintenance = [
       Direction: '方向',
       No: '代號',
       ETMS: 'ETMS',
+      Longitude: '經度',
+      Latitude: '緯度',
+      RecordTime: '時間',
+    },
+  },
+  {
+    name: '區域',
+    newData: { AreaName: '', UserStamp: localStorage.getItem('account') },
+    api: 'Area',
+    searchCondition: { AreaName: '' },
+    keyToLabel: {
+      ID: '編號',
+      AreaName: '區域名稱',
+    },
+  },
+  {
+    name: '機號',
+    newData: { Name: '' },
+    api: 'AircraftNumber',
+    searchCondition: { Name: '' },
+    keyToLabel: {
+      ID: '編號',
+      Name: '機號',
+    },
+  },
+  {
+    name: '紀錄',
+    newData: { Name: '', AreaName: '', Time: '' },
+    api: 'DeviceHistory',
+    searchCondition: {
+      Name: '',
+      AreaName: '',
+      Model: '',
+      Region: '',
+      Location: '',
+      EPC: '',
+      No: '',
+      page: 1,
+      pageSize: 10,
+    },
+    keyToLabel: {
+      ID: '編號',
+      EPC: 'EPC',
+      AreaName: '區域',
+      Name: '名稱',
+      Model: '機型',
+      RFID: 'RFID',
+      Region: 'Region',
+      Location: '機體部位',
+      No: '代號',
       Longitude: '經度',
       Latitude: '緯度',
       RecordTime: '時間',
@@ -405,7 +415,7 @@ const BasicInfo = () => {
                 </tr>
               </thead>
               <tbody>
-                {maintenanceNow !== '細項' && (
+                {maintenanceNow !== '紀錄' && (
                   <tr className="hover:bg-green-100">
                     <td className="border border-r-0 border-separate border-slate-300">
                       <div className="flex gap-2 px-2"></div>
@@ -481,7 +491,7 @@ const BasicInfo = () => {
                     <tr key={i} className="hover:bg-green-100 h-14">
                       <td className="border border-r-0 border-separate border-slate-300">
                         <div className="flex gap-2 px-2">
-                          {maintenanceNow !== '細項' && maintenanceNow !== '設備' && (
+                          {maintenanceNow !== '紀錄' && maintenanceNow !== '設備' && (
                             <div onClick={() => handleDelete(v.ID)}>
                               <IconContext.Provider value={{ className: 'cursor-pointer' }}>
                                 <AiOutlineCloseCircle />
@@ -496,6 +506,7 @@ const BasicInfo = () => {
                           (fieldName === 'Name' ||
                             fieldName === 'DeviceID' ||
                             fieldName === 'AreaID' ||
+                            fieldName === 'AreaName' ||
                             fieldName === 'Model' ||
                             fieldName === 'Region' ||
                             fieldName === 'Location' ||
@@ -582,13 +593,15 @@ const BasicInfo = () => {
                                   ? options[fieldName]?.find((option) => option.ID === v[fieldName])?.AreaName
                                   : fieldName === 'DeviceID'
                                     ? options[fieldName]?.find((option) => option.ID === v[fieldName])?.Name
-                                    : v[fieldName]}
+                                    : (maintenanceNow === '設備' || maintenanceNow === '紀錄') && fieldName === 'ID'
+                                      ? (searchCondition.page - 1) * 10 + (i + 1)
+                                      : v[fieldName]}
                           </td>
                         );
                       })}
                       <td className="border border-l-0 border-separate border-slate-300">
                         <div className="flex gap-2 p-1">
-                          {maintenanceNow !== '細項' && (
+                          {maintenanceNow !== '紀錄' && (
                             <div
                               className={`rounded ${editArr.includes(v.ID) ? ' bg-sky-700 hover:bg-sky-600' : 'bg-emerald-700 hover:bg-emerald-600'} text-white cursor-pointer px-4 py-2 text-nowrap transition`}
                               onClick={() => {
