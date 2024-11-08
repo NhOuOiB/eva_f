@@ -14,6 +14,7 @@ const ExcelExport = () => {
     type: 'month',
     date: dayjs().format('YYYY-MM'),
   });
+  const [tabNow, setTabNow] = useState(0);
 
   const handleExport = async () => {
     const res = await axios.get(`${API_URL}/excelExport/getExcelData`, {
@@ -23,76 +24,83 @@ const ExcelExport = () => {
       return false;
     }
     if (searchCondition.type === 'day') {
-      // 撈出開頭小寫d的key
-      const dkeys = Object.keys(res.data[0]).filter((key) => key[0] === 'd');
-      const rkeys = Object.keys(res.data[0]).filter((key) => key[0] === 'r');
+      // 建立一個新的工作簿
+      const wb = XLSX.utils.book_new();
 
-      // 把dkeys前面的d去掉
-      const processedHeaders = dkeys.map((key) => key.slice(1));
+      res.data.forEach((date, index) => {
+        // 撈出開頭小寫d的key
+        const dkeys = Object.keys(date[0]).filter((key) => key[0] === 'd');
+        const rkeys = Object.keys(date[0]).filter((key) => key[0] === 'r');
 
-      const header = ['ID', 'DeviceName', 'EnoughQty', ...dkeys, ...rkeys];
+        // 把dkeys前面的d去掉
+        const processedHeaders = dkeys.map((key) => key.slice(1));
 
-      const ws = XLSX.utils.json_to_sheet([{}, ...res.data], { header: header });
+        const header = ['ID', 'DeviceName', 'EnoughQty', ...dkeys, ...rkeys];
 
-      const fillSpace = Array(processedHeaders.length - 1).fill('');
+        const ws = XLSX.utils.json_to_sheet([{}, ...date], { header: header });
 
-      XLSX.utils.sheet_add_aoa(ws, [['', '', '', '需求', ...fillSpace, '回收', ...fillSpace]], {
-        origin: 'A1',
-      });
+        const fillSpace = Array(processedHeaders.length - 1).fill('');
 
-      XLSX.utils.sheet_add_aoa(ws, [['項次', '項目', '缺少數量', ...processedHeaders, ...processedHeaders]], {
-        origin: 'A2',
-      });
+        XLSX.utils.sheet_add_aoa(ws, [['', '', '', '需求', ...fillSpace, '回收', ...fillSpace]], {
+          origin: 'A1',
+        });
 
-      // 合併儲存格
-      ws['!merges'] = [
-        { s: { r: 0, c: 3 }, e: { r: 0, c: 3 + dkeys.length - 1 } }, // 合併需求
-        { s: { r: 0, c: 3 + dkeys.length }, e: { r: 0, c: 3 + dkeys.length + rkeys.length - 1 } }, // 合併回收
-      ];
+        XLSX.utils.sheet_add_aoa(ws, [['項次', '項目', '缺少數量', ...processedHeaders, ...processedHeaders]], {
+          origin: 'A2',
+        });
 
-      // 設定欄位寬度
-      const columnWidths = [
-        { wpx: 30 }, // ID 欄
-        { wpx: 160 }, // Name 欄
-        { wpx: 50 }, // EnoughQty 欄
-      ];
-      ws['!cols'] = columnWidths;
+        // 合併儲存格
+        ws['!merges'] = [
+          { s: { r: 0, c: 3 }, e: { r: 0, c: 3 + dkeys.length - 1 } }, // 合併需求
+          { s: { r: 0, c: 3 + dkeys.length }, e: { r: 0, c: 3 + dkeys.length + rkeys.length - 1 } }, // 合併回收
+        ];
 
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let R = range.s.r; R <= range.e.r; ++R) {
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const cell_address = { c: C, r: R };
-          const cell_ref = XLSX.utils.encode_cell(cell_address);
-          if (!ws[cell_ref]) continue;
-          ws[cell_ref].s = {
-            alignment: {
-              horizontal: 'center',
-              vertical: 'center',
-            },
-          };
+        // 設定欄位寬度
+        const columnWidths = [
+          { wpx: 30 }, // ID 欄
+          { wpx: 160 }, // Name 欄
+          { wpx: 50 }, // EnoughQty 欄
+        ];
+        ws['!cols'] = columnWidths;
 
-          if (R === range.s.r && header[C].startsWith('d')) {
-            ws[cell_ref].s.fill = {
-              fgColor: { rgb: '059669' },
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+          for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cell_address = { c: C, r: R };
+            const cell_ref = XLSX.utils.encode_cell(cell_address);
+            if (!ws[cell_ref]) continue;
+            ws[cell_ref].s = {
+              alignment: {
+                horizontal: 'center',
+                vertical: 'center',
+              },
             };
-          } else if (R === range.s.r && header[C].startsWith('r')) {
-            ws[cell_ref].s.fill = {
-              fgColor: { rgb: 'f87171' },
-            };
+
+            if (R === range.s.r && header[C].startsWith('d')) {
+              ws[cell_ref].s.fill = {
+                fgColor: { rgb: '059669' },
+              };
+            } else if (R === range.s.r && header[C].startsWith('r')) {
+              ws[cell_ref].s.fill = {
+                fgColor: { rgb: 'f87171' },
+              };
+            }
           }
         }
-      }
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, dayjs(searchCondition.date).format('YYYY-MM-DD'));
-      XLSX.writeFile(wb, `報表${searchCondition.date}.xlsx`);
+        // 將工作表添加到工作簿中
+        XLSX.utils.book_append_sheet(wb, ws, `${searchCondition.date[index]}`);
+      });
+
+      // 將工作簿寫入一個檔案
+      XLSX.writeFile(wb, `日報表.xlsx`);
     } else if (searchCondition.type === 'month') {
       const days = dayjs(searchCondition.date).daysInMonth();
       const header = ['ID', 'Name', 'MonthlyTotalQty'];
       const nameIndex = header.indexOf('Name');
       const dateHeaders = Array.from({ length: days }, (_, i) => `${i + 1}`);
       header.splice(nameIndex + 1, 0, ...dateHeaders);
-      const ws = XLSX.utils.json_to_sheet(res.data, {
+      const ws = XLSX.utils.json_to_sheet(res.data[0], {
         header: header,
       });
 
@@ -143,12 +151,7 @@ const ExcelExport = () => {
     fetchData();
   }, [searchCondition.date]);
 
-  useEffect(() => {
-    setSearchCondition((prev) => ({
-      ...prev,
-      date: `${searchCondition.type === 'month' ? `${dayjs().format('YYYY-MM')}` : `${dayjs().format('YYYY-MM-DD')}`}`,
-    }));
-  }, [searchCondition.type]);
+  console.log(searchCondition.date);
 
   return (
     <div className="bg w-full h-full flex justify-center items-center gap-4">
@@ -174,13 +177,17 @@ const ExcelExport = () => {
               <div className="flex items-center gap-2">
                 <div
                   className={`px-5 py-2 border rounded-md shadow cursor-pointer ${searchCondition.type === 'month' && 'bg-emerald-600 text-white'}`}
-                  onClick={() => setSearchCondition((prev) => ({ ...prev, type: 'month' }))}
+                  onClick={() =>
+                    setSearchCondition((prev) => ({ ...prev, type: 'month', date: dayjs().format('YYYY-MM') }))
+                  }
                 >
                   月
                 </div>
                 <div
                   className={`px-5 py-2 border rounded-md shadow cursor-pointer ${searchCondition.type === 'day' && 'bg-emerald-600 text-white'}`}
-                  onClick={() => setSearchCondition((prev) => ({ ...prev, type: 'day' }))}
+                  onClick={() =>
+                    setSearchCondition((prev) => ({ ...prev, type: 'day', date: [dayjs().format('YYYY-MM-DD')] }))
+                  }
                 >
                   日
                 </div>
@@ -202,11 +209,14 @@ const ExcelExport = () => {
                 />
               ) : (
                 <DatePicker
+                  multiple
+                  maxTagCount="responsive"
                   className="w-full h-10 shadow"
                   placeholder="時間"
-                  value={searchCondition.date && dayjs(searchCondition.date)}
+                  value={searchCondition.date && searchCondition.date.map((date) => dayjs(date))}
                   onChange={(date, dateString) => {
-                    setSearchCondition((prev) => ({ ...prev, date: dateString }));
+                    const dateArr = dateString.map((date) => dayjs(date).format('YYYY-MM-DD'));
+                    setSearchCondition((prev) => ({ ...prev, date: dateArr }));
                   }}
                 />
               )}
@@ -218,8 +228,22 @@ const ExcelExport = () => {
           <div className="w-0.5 h-full bg-slate-300 "></div>
         </div>
         {/* 內容 */}
-        <div className="w-1/2 h-full flex justify-center">
-          <div className="bg-white w-full md:w-fit h-full overflow-auto shadow-md">
+        <div className="w-1/2 h-full flex justify-center relative">
+          <div className="absolute -top-8 left-0 flex">
+            {searchCondition.type === 'day' &&
+              searchCondition?.date?.map((date, i) => (
+                <div
+                  className={`border border-emerald-600 px-4 py-1 ${tabNow === i ? 'bg-emerald-600 text-white' : 'bg-white text-black'} cursor-pointer`}
+                  key={i}
+                  onClick={() => {
+                    setTabNow(i);
+                  }}
+                >
+                  {dayjs(date).format('MM-DD')}
+                </div>
+              ))}
+          </div>
+          <div className="bg-white w-full md:w-fit h-full overflow-auto shadow-md z-10">
             <table className="table-fixed">
               <thead>
                 <tr>
@@ -235,8 +259,8 @@ const ExcelExport = () => {
                 </tr>
               </thead>
               <tbody>
-                {data?.length > 0 &&
-                  data?.map((item, i) => (
+                {data[tabNow]?.length > 0 &&
+                  data[tabNow]?.map((item, i) => (
                     <tr key={i}>
                       <td className="border border-separate border-slate-500 px-4 text-nowrap">{i + 1}</td>
                       <td className="border border-separate border-slate-500 px-4 text-nowrap">
@@ -261,7 +285,7 @@ const ExcelExport = () => {
                   ))}
               </tbody>
             </table>
-            {data?.length === 0 && (
+            {data[tabNow]?.length === 0 && (
               <div className="w-full h-[39rem] flex justify-center items-center font-extrabold text-3xl">
                 <div>查無資料</div>
               </div>
