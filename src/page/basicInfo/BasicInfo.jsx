@@ -18,11 +18,11 @@ const maintenance = [
     searchCondition: { Name: '' },
     keyToLabel: {
       ID: '編號',
-      Name: '裝置名稱',
+      Name: '裝備名稱',
     },
   },
   {
-    name: '設備',
+    name: '裝備',
     newData: {
       DeviceID: '',
       EPC: '不用填',
@@ -71,12 +71,13 @@ const maintenance = [
   },
   {
     name: '機號',
-    newData: { Name: '' },
+    newData: { Name: '', Model: '' },
     api: 'AircraftNumber',
-    searchCondition: { Name: '' },
+    searchCondition: { Name: '', Model: '' },
     keyToLabel: {
       ID: '編號',
       Name: '機號',
+      Model: '機型',
     },
   },
   {
@@ -182,7 +183,7 @@ const BasicInfo = () => {
             });
           } else {
             toast.error(
-              `請輸入 ${maintenanceNow === '類別' && key === 'Name' ? '裝置名稱' : maintenanceNow === '區域' && key === 'AreaName' ? '區域名稱' : maintenanceNow === '機號' && key === 'Name' ? '機號' : key}`,
+              `請輸入 ${maintenanceNow === '類別' && key === 'Name' ? '裝備名稱' : maintenanceNow === '區域' && key === 'AreaName' ? '區域名稱' : maintenanceNow === '機號' && key === 'Name' ? '機號' : key}`,
               {
                 position: 'top-center',
                 autoClose: 3000,
@@ -236,7 +237,7 @@ const BasicInfo = () => {
       console.log(res.data);
       setData(res.data.data);
       setTotalCount(res.data.totalCount);
-      if (maintenanceNow === '設備') {
+      if (maintenanceNow === '裝備') {
         let res = await axios.get(`${API_URL}/basicInfo/getOptions`);
         setOptions(res.data);
       }
@@ -328,7 +329,7 @@ const BasicInfo = () => {
       <div className="content bg-white w-full sm:w-11/12 md:w-5/6 lg:w-4/5 xl:w-5/6 2xl:w-3/4 h-5/6 min-h-60 rounded-xl flex justify-center items-center gap-6 lg:gap-10 xl:gap-16 2xl:gap-24 py-12 overflow-hidden">
         <div className="w-1/2 md:w-1/4 xl:w-1/5 h-full flex flex-col gap-8">
           {/* 分頁 */}
-          <div className="w-full h-16 bg-white grid grid-cols-5 shadow-md border">
+          <div className="w-full min-h-16 bg-white grid grid-cols-5 shadow-md border">
             {maintenance.map((v, i) => {
               return (
                 <div
@@ -348,7 +349,7 @@ const BasicInfo = () => {
             <div className="w-full h-0.5 bg-slate-300 "></div>
           </div>
           {/* 搜尋條件 */}
-          <div className="w-full flex flex-col justify-center items-center gap-2">
+          <div className="w-full flex flex-col items-center gap-2 overflow-y-auto">
             {Object.keys(maintenance.find((v) => v.name === maintenanceNow)?.searchCondition).map((labelName, i) => (
               <div key={i} className="w-fit flex flex-col justify-center items-start gap-2">
                 <label htmlFor={labelName}>
@@ -491,7 +492,7 @@ const BasicInfo = () => {
                     <tr key={i} className="hover:bg-green-100 h-14">
                       <td className="border border-r-0 border-separate border-slate-300">
                         <div className="flex gap-2 px-2">
-                          {maintenanceNow !== '紀錄' && maintenanceNow !== '設備' && (
+                          {maintenanceNow !== '紀錄' && maintenanceNow !== '裝備' && (
                             <div onClick={() => handleDelete(v.ID)}>
                               <IconContext.Provider value={{ className: 'cursor-pointer' }}>
                                 <AiOutlineCloseCircle />
@@ -593,7 +594,7 @@ const BasicInfo = () => {
                                   ? options[fieldName]?.find((option) => option.ID === v[fieldName])?.AreaName
                                   : fieldName === 'DeviceID'
                                     ? options[fieldName]?.find((option) => option.ID === v[fieldName])?.Name
-                                    : (maintenanceNow === '設備' || maintenanceNow === '紀錄') && fieldName === 'ID'
+                                    : (maintenanceNow === '裝備' || maintenanceNow === '紀錄') && fieldName === 'ID'
                                       ? (searchCondition.page - 1) * 10 + (i + 1)
                                       : v[fieldName]}
                           </td>
